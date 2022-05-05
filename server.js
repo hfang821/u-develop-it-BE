@@ -30,8 +30,29 @@ app.get('/',(req,res) => {
 
 //the query() method runs the sql query and executes the callback with
 //all the resulting rows that match the query
-db.query(`SELECT * FROM candidates`, (err,rows) => {
+//? makes it a prepared statement and takes in the additional param argument
+//using a placeholder can block a SQL injection attack
+/*
+db.query(`DELETE FROM candidates WHERE id = ?`, 1, (err,rows) => {
+    //console.log(rows);
+    //Get a single candidate
+    if(err){
+        console.log(err);
+    }
     console.log(rows);
+});
+*/
+
+const sql = `INSERT INTO candidates (id,first_name,last_name,industry_connected)
+                VALUES(?,?,?,?)`;
+//the values in params must match the order of placeholders
+const params = [1,'Ronald','Firbank', 1];
+
+db.query(sql,params, (err,result)=>{
+    if(err){
+        console.log(err);
+    }
+    console.log(result);
 });
 
 //catchAll: Default response for any other request(Not found)
