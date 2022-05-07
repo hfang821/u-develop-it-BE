@@ -51,7 +51,7 @@ app.get('/api/candidates/:id',(req,res) => {
     LEFT JOIN parties
     ON candidates.party_id = parties.id
     WHERE candidates.id=?`;
-    
+
     const params = [req.params.id];
 
     db.query(sql,params,(err,rows)=>{
@@ -66,6 +66,35 @@ app.get('/api/candidates/:id',(req,res) => {
     });
 });
 
+app.get('/api/parties',(req, res)=>{
+    const sql =`SELECT * FROM parties`;
+    db.query(sql,(err,rows)=>{
+        if(err) {
+            res.status(500).json({error: err.message});
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
+    });
+});
+
+app.get('/api/party/:id', (req, res) => {
+    const sql = `SELECT * FROM parties WHERE id = ?`
+    const params = [req.params.id];
+    db.query(sql,params,(err, row) => {
+        if(err) {
+            res.status(400).json({error: err.message});
+        }
+        res.json({
+            message: 'success',
+            data: row
+        });
+    });
+});
+
+//delete a candidate
 app.delete('/api/candidate/:id',(req,res)=>{
     const sql = `DELETE FROM candidates WHERE id=?`;
     const params = [req.params.id];
@@ -88,6 +117,29 @@ app.delete('/api/candidate/:id',(req,res)=>{
         }
     });
 });
+
+//delete a party
+app.delete('/api/party/:id', (req,res)=>{
+    const sql = `DELETE FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.query(sql, params,(err, result)=>{
+        if(err) {
+            res.status(400).json({error: err.message});
+        } 
+        //check if anything is deleted
+        else if (!result.affectedRows) {
+            res.json({
+                message:'Party does not exist!'}); 
+            } else {
+                res.json({
+                    message:'Deleted',
+                    changes: result.affectedRows,
+                    id: req.params.id
+                });
+            }
+        });
+    });
+
 
 //create a candidate
 //deconstructing the req to pull the body property out of the entire req
@@ -114,6 +166,36 @@ app.post('/api/candidate',({body},res)=>{
         });
     });
 
+});
+
+//update a candidate's party 
+app.put('/api/candidate/:id', (req, res) => {
+    //this forces any PUT request to include a party_id property
+    const errors = inputCheck(req.body, 'party_id');
+    if(errors) {
+        res.status(400).json({error: errors});
+        return;
+    }
+
+    const sql = `UPDATE candidates SET party_id = ?
+        WHERE id = ?`;
+    const params = [req.params.party_id, req.params.id];
+    db.query(sql,params, (err, result) => {
+        if(err) {
+            res.status(400).json({error: err.message});
+        } //checks if a record was found
+        else if (!result.affectedRows) {
+            res.json({
+                message:'Candidate not found'
+            });
+        } else {
+            res.json({
+                message: 'success',
+                data: req.body,
+                changes: result.affectedRows
+            });
+        }
+    });
 });
 //the query() method runs the sql query and executes the callback with
 //all the resulting rows that match the query
